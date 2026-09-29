@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Cardio Research</string>
+    <string name="title_activity_main">Cardio Research</string>
+    <string name="package_name">com.cardio.research</string>
+    <string name="custom_url_scheme">com.cardio.research</string>
+</resources>
