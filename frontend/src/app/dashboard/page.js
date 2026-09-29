@@ -8,24 +8,28 @@ import { syncOfflineRecords } from '@/lib/syncEngine';
 
 export default function DashboardPage() {
   const [patients, setPatients] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState(null);
   const router = useRouter();
 
-  const loadPatients = async () => {
+  const loadInitialData = async () => {
     try {
-      const data = await fetchWithAuth('/patients/');
-      setPatients(data.results || data);
+      const userProfile = await fetchWithAuth('/auth/me/');
+      setCurrentUser(userProfile);
+
+      const patientData = await fetchWithAuth('/patients/');
+      setPatients(patientData.results || patientData);
     } catch (err) {
-      console.error('Failed to load patients:', err);
-    } finally {
+      console.error('Failed to load user or patients:', err);
+    } font-finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadPatients();
+    loadInitialData();
   }, []);
 
   const handleSync = async () => {
@@ -34,9 +38,9 @@ export default function DashboardPage() {
     try {
       const result = await syncOfflineRecords();
       setSyncStatus(`Synced: ${result.synced}, Failed: ${result.failed}`);
-      await loadPatients();
+      await loadInitialData();
     } catch (err) {
-      setSyncStatus('Sync failed. Please check network connection.');
+      setSyncStatus('Sync failed. Check network connection.');
     } finally {
       setSyncing(false);
     }
@@ -50,11 +54,14 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Navigation Header */}
+      {/* Header */}
       <nav className="bg-slate-900 text-white px-6 py-4 flex justify-between items-center shadow-md">
         <div>
           <h1 className="text-xl font-bold">Cardiovascular Research Portal</h1>
-          <p className="text-xs text-slate-400">Multi-Modal Clinical Data Intake</p>
+          <p className="text-xs text-slate-400">
+            Collector: <span className="text-indigo-300 font-semibold">{currentUser?.username || 'Loading...'}</span> 
+            {currentUser?.is_staff && <span className="ml-2 bg-indigo-600 px-2 py-0.5 rounded text-[10px] uppercase font-bold">Admin</span>}
+          </p>
         </div>
         <div className="flex gap-3">
           <button
@@ -73,16 +80,28 @@ export default function DashboardPage() {
         </div>
       </nav>
 
-      {/* Main Container */}
-      <main className="max-w-7xl mx-auto p-6">
+      {/* Main Area */}
+      <main className="max-w-7xl mx-auto p-6 space-y-6">
         {syncStatus && (
-          <div className="mb-4 p-3 bg-blue-50 text-blue-800 border border-blue-200 rounded-md text-sm">
+          <div className="p-3 bg-blue-50 text-blue-800 border border-blue-200 rounded-md text-sm">
             {syncStatus}
           </div>
         )}
 
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-800">Enrolled Patient Registry</h2>
+        {/* Collection Metric Banner */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span className="text-xs font-semibold text-slate-400 uppercase">
+              {currentUser?.is_staff ? 'Total System Records' : 'My Total Records Collected'}
+            </span>
+            <div className="text-3xl font-bold text-slate-800 mt-1">{patients.length} Records</div>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-bold text-slate-800">
+            {currentUser?.is_staff ? 'System-Wide Patient Registry' : 'My Collection Registry'}
+          </h2>
           <Link
             href="/patients/new"
             className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg transition"
@@ -103,7 +122,7 @@ export default function DashboardPage() {
                   <th className="p-4">Age / Gender</th>
                   <th className="p-4">Diagnosis</th>
                   <th className="p-4">Residence</th>
-                  <th className="p-4">Reports Uploaded</th>
+                  <th className="p-4">Collector</th>
                   <th className="p-4">Action</th>
                 </tr>
               </thead>
@@ -111,7 +130,7 @@ export default function DashboardPage() {
                 {patients.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="p-6 text-center text-slate-400">
-                      No patient records found. Click above to register a new record.
+                      No records found for your account.
                     </td>
                   </tr>
                 ) : (
@@ -121,11 +140,7 @@ export default function DashboardPage() {
                       <td className="p-4">{patient.age} yrs / {patient.gender}</td>
                       <td className="p-4 font-medium text-slate-800">{patient.diagnosis_type}</td>
                       <td className="p-4 text-slate-600">{patient.residence_area}</td>
-                      <td className="p-4">
-                        <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-semibold">
-                          {patient.reports?.length || 0} files
-                        </span>
-                      </td>
+                      <td className="p-4 font-medium text-slate-700">{patient.collected_by_username || 'Self'}</td>
                       <td className="p-4">
                         <Link
                           href={`/patients/${patient.id}`}
