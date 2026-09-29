@@ -1,14 +1,18 @@
 import os
 from pathlib import Path
 from datetime import timedelta
+import dotenv  # Ensure python-dotenv is installed
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-research-key-change-in-production')
+# Load environment variables from root .env file if present
+ENV_FILE_PATH = BASE_DIR.parent / '.env'
+if ENV_FILE_PATH.exists():
+    dotenv.load_dotenv(ENV_FILE_PATH)
 
-DEBUG = True
-
-ALLOWED_HOSTS = ['*']
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-fallback-key')
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
 # Installed Applications
 INSTALLED_APPS = [
