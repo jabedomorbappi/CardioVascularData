@@ -8,6 +8,12 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import get_user_model
 from apps.authentication.serializers import UserSerializer, RegisterUserSerializer
 
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.contrib.auth import get_user_model
+from apps.authentication.serializers import UserSerializer, RegisterUserSerializer
+
 User = get_user_model()
 
 class UserProfileView(APIView):
@@ -19,5 +25,5 @@ class UserProfileView(APIView):
 
 class RegisterUserView(generics.CreateAPIView):
     queryset = User.objects.all()
-    permission_classes = [permissions.IsAdminUser] # Only admins/research leads can add intern doctor accounts
+    permission_classes = [permissions.AllowAny]  # Allow new collectors to register publicly
     serializer_class = RegisterUserSerializer
